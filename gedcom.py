@@ -84,6 +84,7 @@ class LineageLinkedGedcom:
         self.submission_record = None
         self.individuals = []
         self.families = []
+        self.index = {}
         self.trailer = None
 
         for r in gedcom.records:
@@ -102,270 +103,165 @@ class LineageLinkedGedcom:
             elif r.tag == 'FAM':
                 fr = FamilyRecord(r)
                 self.families.append(fr)
-                #print fr
+                if r.xref_id is not None:
+                    self.index[r.xref_id]=fr
             elif r.tag == 'INDI':
                 ir = IndividualRecord(r)
                 self.individuals.append(ir)
+                if r.xref_id is not None:
+                    self.index[r.xref_id]=ir
             else:
-                print r.tag
+                pass
+                #print r.tag
+        
+        for i in self.individuals:
+            for tag in ('FAMS','FAMC'):
+                if i.records.has_key(tag):
+                    for f in i.records[tag]:
+                        if self.index.has_key(f.value):
+                            f.value = self.index[f.value]
+        for f in self.families:
+            for tag in ('HUSB','WIFE','CHIL'):
+                if f.records.has_key(tag):
+                    for i in f.records[tag]:
+                        if self.index.has_key(i.value):
+                            i.value = self.index[i.value]
             
+                        
+        
 class LineageLinkedRecord:
-    def __init__(self,rec,lint):
-        tags = []
-        for r in rec.sub_records:
-            if not lint.has_key(r.tag):
-                print rec
-                raise Exception('unknown tag: '+r.tag+' in '+rec.tag)
-            if lint[r.tag]['single'] and r.tag in tags:
-                raise Exception('multiple instances of '+r.tag+' in '+rec.tag)
-            if lint[r.tag]['no_sub_records'] and len(r.sub_records):
-                print r
-                raise Exception('subrecords found: '+r.tag+' in '+rec.tag)
-            if not r.tag in tags:
-                tags.append(r.tag)
-            
-        
-class EventRecord (LineageLinkedRecord):
-    lint = {'PLAC':{'single':True,'no_sub_records':True},
-            'DATE':{'single':True,'no_sub_records':True}
-           }
     def __init__(self,rec):
-        LineageLinkedRecord.__init__(self,rec,EventRecord.lint)
-        self.type = rec.tag
-        self.date = None
-        self.location = None
-        
+        self.tag = rec.tag
+        self.value = rec.value
+        self.records = {}
+
         for r in rec.sub_records:
-            if r.tag == 'DATE':
-                self.date = r.value
-            elif r.tag == 'PLAC':
-                self.location = r.value
+            if not self.handleRecord(r):
+                #print rec
+                #raise Exception('record not handled: '+r.tag+' in '+rec.tag)
+                print 'record not handled: '+r.tag+' in '+rec.tag
+            
+    def handleRecord(self,rec):
+        try:
+            self.append(rec.tag,handlers[rec.tag](rec))
+        except KeyError:
+            self.append(rec.tag,rec)
+        return True
+
+    def append(self,tag,value):
+        if not self.records.has_key(tag):
+            self.records[tag]=[]
+        self.records[tag].append(value)
+
+    def get(self,tag):
+        if self.records.has_key(tag):
+            return self.records[tag][0]
+            
+    def getValue(self,tag):
+        ret = self.get(tag)
+        if ret is not None:
+            return ret.value
+            
+    def getAll(self,tag):
+        if self.records.has_key(tag):
+            return self.records[tag][:]
+        return []
+
+
+class EventRecord (LineageLinkedRecord):
+    def __init__(self,rec):
+        LineageLinkedRecord.__init__(self,rec)
 
     def __str__(self):
-        return self.type + ' date: ' +str(self.date)+' location: ' +str(self.location)
+        return str(self.getValue('DATE'))+' ' +str(self.getValue('PLAC'))
 
 class NameRecord (LineageLinkedRecord):
-    lint = {'NPFX':{'single':True,'no_sub_records':True},
-            '_MIDN':{'single':True,'no_sub_records':True},
-            'GIVN':{'single':True,'no_sub_records':True},
-            'NICK':{'single':True,'no_sub_records':True},
-           }
     def __init__(self,rec):
-        LineageLinkedRecord.__init__(self,rec,NameRecord.lint)
-        self.value = rec.value
-        self.given = None
-        self.prefix = None
-        self.middle = None
-        self.nickname = None
-
-        for r in rec.sub_records:
-            if r.tag == 'NPFX':
-                self.prefix = r.value
-            elif r.tag == '_MIDN':
-                self.middle = r.value
-            elif r.tag == 'GIVN':
-                self.given = r.value
-            elif r.tag == 'NICK':
-                self.nickname = r.value
-            else:
-                print r
+        LineageLinkedRecord.__init__(self,rec)
 
     def __str__(self):
         return ''.join(self.value.split('/'))
 
 class ReferenceRecord (LineageLinkedRecord):
-    lint = {'TYPE':{'single':True,'no_sub_records':True},
-           }
     def __init__(self,rec):
-        LineageLinkedRecord.__init__(self,rec,ReferenceRecord.lint)
-        self.value = rec.value
-        self.type = None
-
-        for r in rec.sub_records:
-            if r.tag == 'TYPE':
-                self.type = r.value
-            else:
-                print r
+        LineageLinkedRecord.__init__(self,rec)
 
     def __str__(self):
         return str(self.type)+':'+self.value
 
 class BioRecord (LineageLinkedRecord):
-    lint = {'TEXT':{'single':True,'no_sub_records':True},
-           }
     def __init__(self,rec):
-        LineageLinkedRecord.__init__(self,rec,BioRecord.lint)
-        self.text = None
-
-        for r in rec.sub_records:
-            if r.tag == 'TEXT':
-                self.text = r.value
-            else:
-                print r
+        LineageLinkedRecord.__init__(self,rec)
         
 class ObjectRecord (LineageLinkedRecord):
-    lint = {'FORM':{'single':True,'no_sub_records':True},
-            'DATE':{'single':True,'no_sub_records':True},
-            'PLAC':{'single':True,'no_sub_records':True},
-            'AUTH':{'single':True,'no_sub_records':True},
-            'TEXT':{'single':True,'no_sub_records':True},
-            'FILE':{'single':True,'no_sub_records':True},
-            'TITL':{'single':True,'no_sub_records':True},
-           }
     def __init__(self,rec):
-        LineageLinkedRecord.__init__(self,rec,ObjectRecord.lint)
-        self.form = None
-        self.date = None
-        self.location = None
-        self.author = None
-        self.text = None
-        self.file = None
-        self.title = None
+        LineageLinkedRecord.__init__(self,rec)
 
-        for r in rec.sub_records:
-            if r.tag == 'FORM':
-                self.form = r.value
-            elif r.tag == 'DATE':
-                self.date = r.value
-            elif r.tag == 'PLAC':
-                self.location = r.value
-            elif r.tag == 'AUTH':
-                self.author = r.value
-            elif r.tag == 'TEXT':
-                self.text = r.value
-            elif r.tag == 'FILE':
-                self.file = r.value
-            elif r.tag == 'TITL':
-                self.title = r.value
-            else:
-                print r
+    def form(self):
+        ret = self.get('FORM')
+        if ret is None:
+            return self.value
+
+    def text(self):
+        return self.get('TEXT')
 
     def __str__(self):
-        return str(self.form)+': '+str(self.text)
+        return str(self.form())+': '+str(self.text())
         
 class SurnameRecord(LineageLinkedRecord):
-    lint = {'_MARN':{'single':True,'no_sub_records':True},
-            'NSFX':{'single':True,'no_sub_records':True},
-            '_AKA':{'single':True,'no_sub_records':True},
-           }
     def __init__(self,rec):
-        LineageLinkedRecord.__init__(self,rec,SurnameRecord.lint)
-        self.value = rec.value
-        self.married_name = None
-        self.suffix = None
-        self.aka = None
-
-        for r in rec.sub_records:
-            if r.tag == '_MARN':
-                self.married_name = r.value
-            elif r.tag == 'NSFX':
-                self.suffix = r.value
-            elif r.tag == '_AKA':
-                self.aka = r.value
-            else:
-                print r
+        LineageLinkedRecord.__init__(self,rec)
 
     def __str__(self):
         return ''.join(self.value.split('/'))
         
 class FamilyRecord (LineageLinkedRecord):
-    lint = {'HUSB':{'single':True,'no_sub_records':True},
-            'WIFE':{'single':True,'no_sub_records':True},
-            'MARR':{'single':True,'no_sub_records':False},
-            'CHIL':{'single':False,'no_sub_records':True},
-           }
     def __init__(self,rec):
-        LineageLinkedRecord.__init__(self,rec,FamilyRecord.lint)
-        self.husband = None
-        self.wife = None
-        self.marriage = None
-        self.children = []
+        LineageLinkedRecord.__init__(self,rec)
 
-        for r in rec.sub_records:
-            if r.tag == 'HUSB':
-                self.husband = r.value
-            elif r.tag == 'WIFE':
-                self.wife = r.value
-            elif r.tag == 'MARR':
-                self.marriage = EventRecord(r)
-            elif r.tag == 'CHIL':
-                self.children.append(r.value)
-            else:
-                print r
-        #print rec
-
-    def __str__(self):
-        return str(self.husband)+' and '+str(self.wife)+' (marriage: '+str(self.marriage)+')'
-
-class IndividualRecord (LineageLinkedRecord):
-    lint = {'NAME':{'single':True,'no_sub_records':False},
-            'SURN':{'single':True,'no_sub_records':False},
-            'SEX':{'single':True,'no_sub_records':True},
-            'BIRT':{'single':True,'no_sub_records':False},
-            'DEAT':{'single':True,'no_sub_records':False},
-            'FAMC':{'single':True,'no_sub_records':True},
-            'FAMS':{'single':False,'no_sub_records':True},
-            '_BIO':{'single':True,'no_sub_records':False},
-            '_URL':{'single':True,'no_sub_records':True},
-            '_EMAIL':{'single':True,'no_sub_records':True},
-            'REFN':{'single':False,'no_sub_records':False},
-            'OBJE':{'single':False,'no_sub_records':False},
-           }
-            
-    def __init__(self,rec):
-        LineageLinkedRecord.__init__(self,rec,IndividualRecord.lint)
-        self.name = None
-        self.surname = None
-        self.sex = None
-        self.birth = None
-        self.death = None
-        self.child_to_family = None
-        self.spouse_to_family = []
-        self.references = []
-        self.bio = None
-        self.url = None
-        self.email = None
-        self.objects = []
-
-        for r in rec.sub_records:
-            if r.tag == 'NAME':
-                self.name = NameRecord(r)
-            elif r.tag == 'SURN':
-                self.surname = SurnameRecord(r)
-            elif r.tag == 'SEX':
-                self.sex = r.value
-            elif r.tag == 'BIRT':
-                self.birth = EventRecord(r)
-            elif r.tag == 'DEAT':
-                self.death = EventRecord(r)
-            elif r.tag == 'FAMC':
-                self.child_to_family = r.value
-            elif r.tag == 'FAMS':
-                self.spouse_to_family.append(r.value)
-            elif r.tag == 'REFN':
-                self.references.append(ReferenceRecord(r))
-            elif r.tag == '_BIO':
-                self.bio = BioRecord(r)
-            elif r.tag == '_URL':
-                self.url = r.value
-            elif r.tag == '_EMAIL':
-                self.email = r.value
-            elif r.tag == 'OBJE':
-                self.objects.append(ObjectRecord(r))
-            else:
-                print r
-
-    def surname_soundex(self):
-        if self.surname is not None:
-            return soundex(self.surname.value)
-                
     def __str__(self):
         ret = []
-        ret.append(' '.join(('('+str(self.surname)+')',str(self.name))))
-        ret.append('  b. '+str(self.birth))
-        ret.append('  d. '+str(self.death))
-        ret.append('  '+str(self.url))
+        ret.append(str(self.getValue('HUSB'))+' and '+str(self.getValue('WIFE'))+' (marriage: '+str(self.get('MARR'))+')')
+        for c in self.getAll('CHIL'):
+            ret.append('  '+str(c))
         return '\n'.join(ret)
+
+class IndividualRecord (LineageLinkedRecord):
+    def __init__(self,rec):
+        LineageLinkedRecord.__init__(self,rec)
+
+
+    def surname_soundex(self):
+        if self.get('SURN') is not None:
+            return soundex(self.get('SURN').value)
+
+    def isName(self,n):
+        return str(self.get('NAME')) == n
+        
+    def label(self):
+        return self.__str__()
+
+    def __str__(self):
+        ret = []
+
+        ret.append(str(self.records['NAME'][0]))
+        if self.get('BIRT') is not None:
+            ret.append('  b. '+str(self.get('BIRT')))
+        if self.get('DEAT') is not None:
+            ret.append('  d. '+str(self.get('DEAT')))
+        if self.get('_URL') is not None:
+            ret.append('  '+str(self.getValue('_URL')))
+        return '\n'.join(ret)
+
+
+handlers = {'_BIO':BioRecord,
+                 'OBJE':ObjectRecord,
+                 'NAME':NameRecord,
+                 'SURN':SurnameRecord,
+                 'BIRT':EventRecord,
+                 'DEAT':EventRecord,
+               }
+
 
 ## {{{ http://code.activestate.com/recipes/52213/ (r1)
 def soundex(name, len=4):
@@ -404,9 +300,9 @@ if __name__ == '__main__':
     g = Gedcom(sys.argv[1])
     llg = LineageLinkedGedcom(g)
     for i in llg.individuals:
-        if len(i.objects):
+        if i.records.has_key('OBJE'):
             print i
-            for o in i.objects:
+            for o in i.records['OBJE']:
                 print o
 
     
