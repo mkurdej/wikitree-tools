@@ -3,6 +3,10 @@
 import gedcom
 import sys
 
+if len(sys.argv) != 2:
+    print 'usage: wt_lint.py gedcom.ged'
+    exit(1)
+    
 g = gedcom.Gedcom(sys.argv[1])
 llg = gedcom.LineageLinkedGedcom(g)
 
