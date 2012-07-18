@@ -134,6 +134,7 @@ class LineageLinkedRecord:
         self.tag = rec.tag
         self.value = rec.value
         self.records = {}
+        self.xref_id = rec.xref_id
 
         for r in rec.sub_records:
             if not self.handleRecord(r):
