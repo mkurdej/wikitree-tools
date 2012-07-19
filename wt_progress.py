@@ -30,12 +30,27 @@ cur_gen = 0
 while cur_gen < len(generations):
     for i in generations[cur_gen]:
         f = i.getValue('FAMC')
-        if f is not None:
+        if f is None:
+            print cur_gen, 
+            if i.get('_URL') is not None:
+                print i.get('_URL').value,
+            print '\t'+str(i.get('NAME')),'missing parents'
+        else:
             if len(generations) <= cur_gen+1:
                 generations.append([])
-            if f.getValue('HUSB') is not None:
+            if f.getValue('HUSB') is None:
+                print cur_gen, 
+                if i.get('_URL') is not None:
+                    print i.get('_URL').value,
+                print '\t',i.get('NAME'),'missing father'
+            else:
                 generations[cur_gen+1].append(f.getValue('HUSB'))
-            if f.getValue('WIFE') is not None:
+            if f.getValue('WIFE') is None:
+                print cur_gen,
+                if i.get('_URL') is not None:
+                    print i.get('_URL').value,
+                print '\t',i.get('NAME'),'missing mother'
+            else:
                 generations[cur_gen+1].append(f.getValue('WIFE'))
     cur_gen += 1
 
