@@ -20,7 +20,8 @@ class GedcomRecord:
             if parts[1].startswith('CONC '):
                 self.value = parts[1][5:]
             elif parts[1].startswith('CONT '):
-                self.value = '\n'+parts[1][5:]
+                #self.value = '\n'+parts[1][5:]
+                self.value = parts[1][5:]+'\n'
             else:
                 self.value = parts[1]
             
@@ -36,9 +37,9 @@ class GedcomRecord:
             if rec.tag == 'CONC':
                 self.value += rec.value
             elif rec.tag == 'CONT':
-                self.value += '\n'
                 if rec.value is not None:
                     self.value += rec.value
+                self.value += '\n'
             else:
                 self.sub_records.append(rec)
         else:
