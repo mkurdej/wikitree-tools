@@ -28,8 +28,8 @@ llg = gedcom.LineageLinkedGedcom(g)
 urls = {}
 
 for i in llg.individuals:
-    if i.get('_BIO') is not None:
-        for l in i.get('_BIO').get('TEXT').value.splitlines():
+    if i.get('NOTE') is not None:
+        for l in i.get('NOTE').get('TEXT').value.splitlines():
             start = l.find('http')
             if start != -1:
                 #print l
@@ -43,18 +43,24 @@ for i in llg.individuals:
                     urls[url] = []
                 urls[url].append(i)
 
+opener = urllib2.build_opener()
+opener.addheaders = [('User-agent', 'Mozilla/5.0')]
+
 for u,individuals in urls.iteritems():
     ok = False
     error = '\n'
-    
+    print u
     if check:
         try:
-            data = urllib2.urlopen(u,None,20)
+            #data = urllib2.urlopen(u,None,20)
+            opener.open(u,timeout=20)
             ok = True
         except socket.timeout:
             error += '!!!! timed out connecting to server !!!!'
         except urllib2.URLError as e:
-            error += ' '.join(('!!!!',str(e),'!!!!'))
+            error += ' '.join(('!!!! urllib2 error:',str(e),'!!!!'))
+        except socket.error as e:
+            error += ' '.join(('!!!! socket error:',str(e),'!!!!'))
 
     if not ok:
         print error

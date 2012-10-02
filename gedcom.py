@@ -1,5 +1,10 @@
 #!/usr/bin/env python
 
+''' Classes for parsing a GEDCOM file.
+More info on GEDCOM:  http://en.wikipedia.org/wiki/GEDCOM
+V5.5 specs: http://homepages.rootsweb.ancestry.com/~pmcbride/gedcom/55gctoc.htm
+V5.5.1 specs: http://www.phpgedview.net/ged551-5.pdf
+'''
 
 class GedcomRecord:
     def __init__(self,line):
@@ -77,9 +82,12 @@ class Gedcom:
             ret.append(str(r))
         return '\n'.join(ret)
 
+handlers = {}
+        
 class LineageLinkedGedcom:
-    def __init__(self,gedcom):
+    def __init__(self,gedcom,h=handlers):
         self.gedcom = gedcom
+        self.handlers = h
 
         self.header = None
         self.submission_record = None
@@ -102,12 +110,12 @@ class LineageLinkedGedcom:
                     raise 'multiple trailer records found'
                 self.trailer = r
             elif r.tag == 'FAM':
-                fr = FamilyRecord(r)
+                fr = self.handlers[r.tag](r,h)
                 self.families.append(fr)
                 if r.xref_id is not None:
                     self.index[r.xref_id]=fr
             elif r.tag == 'INDI':
-                ir = IndividualRecord(r)
+                ir = self.handlers[r.tag](r,h)
                 self.individuals.append(ir)
                 if r.xref_id is not None:
                     self.index[r.xref_id]=ir
@@ -131,11 +139,13 @@ class LineageLinkedGedcom:
                         
         
 class LineageLinkedRecord:
-    def __init__(self,rec):
+    def __init__(self,rec,h):
+        self.handlers = h
         self.tag = rec.tag
         self.value = rec.value
         self.records = {}
         self.xref_id = rec.xref_id
+        self.reference_numbers = {}
 
         for r in rec.sub_records:
             if not self.handleRecord(r):
@@ -145,7 +155,7 @@ class LineageLinkedRecord:
             
     def handleRecord(self,rec):
         try:
-            self.append(rec.tag,handlers[rec.tag](rec))
+            self.append(rec.tag,self.handlers[rec.tag](rec,self.handlers))
         except KeyError:
             self.append(rec.tag,rec)
         return True
@@ -154,6 +164,8 @@ class LineageLinkedRecord:
         if not self.records.has_key(tag):
             self.records[tag]=[]
         self.records[tag].append(value)
+        if tag == 'REFN':
+            self.reference_numbers[value.getType()]=value.value
 
     def get(self,tag):
         if self.records.has_key(tag):
@@ -171,38 +183,39 @@ class LineageLinkedRecord:
 
 
 class EventRecord (LineageLinkedRecord):
-    def __init__(self,rec):
-        LineageLinkedRecord.__init__(self,rec)
+    def __init__(self,rec,h):
+        LineageLinkedRecord.__init__(self,rec,h)
 
     def __str__(self):
         return str(self.getValue('DATE'))+' ' +str(self.getValue('PLAC'))
 
 class NameRecord (LineageLinkedRecord):
-    def __init__(self,rec):
-        LineageLinkedRecord.__init__(self,rec)
+    def __init__(self,rec,h):
+        LineageLinkedRecord.__init__(self,rec,h)
 
     def __str__(self):
-        return ''.join(self.value.split('/'))
+        return ' '.join(''.join(self.value.split('/')).split())
 
 class ReferenceRecord (LineageLinkedRecord):
-    def __init__(self,rec):
-        LineageLinkedRecord.__init__(self,rec)
+    def __init__(self,rec,h):
+        LineageLinkedRecord.__init__(self,rec,h)
 
     def __str__(self):
         return str(self.type)+':'+self.value
 
-class BioRecord (LineageLinkedRecord):
-    def __init__(self,rec):
-        LineageLinkedRecord.__init__(self,rec)
+class NoteRecord (LineageLinkedRecord):
+    def __init__(self,rec,h):
+        LineageLinkedRecord.__init__(self,rec,h)
         
 class ObjectRecord (LineageLinkedRecord):
-    def __init__(self,rec):
-        LineageLinkedRecord.__init__(self,rec)
+    def __init__(self,rec,h):
+        LineageLinkedRecord.__init__(self,rec,h)
 
     def form(self):
         ret = self.get('FORM')
         if ret is None:
             return self.value
+        return ret
 
     def text(self):
         return self.get('TEXT')
@@ -211,15 +224,15 @@ class ObjectRecord (LineageLinkedRecord):
         return str(self.form())+': '+str(self.text())
         
 class SurnameRecord(LineageLinkedRecord):
-    def __init__(self,rec):
-        LineageLinkedRecord.__init__(self,rec)
+    def __init__(self,rec,h):
+        LineageLinkedRecord.__init__(self,rec,h)
 
     def __str__(self):
         return ''.join(self.value.split('/'))
         
 class FamilyRecord (LineageLinkedRecord):
-    def __init__(self,rec):
-        LineageLinkedRecord.__init__(self,rec)
+    def __init__(self,rec,h):
+        LineageLinkedRecord.__init__(self,rec,h)
 
     def __str__(self):
         ret = []
@@ -229,8 +242,8 @@ class FamilyRecord (LineageLinkedRecord):
         return '\n'.join(ret)
 
 class IndividualRecord (LineageLinkedRecord):
-    def __init__(self,rec):
-        LineageLinkedRecord.__init__(self,rec)
+    def __init__(self,rec,h):
+        LineageLinkedRecord.__init__(self,rec,h)
 
 
     def surname_soundex(self):
@@ -241,7 +254,14 @@ class IndividualRecord (LineageLinkedRecord):
         return str(self.get('NAME')) == n
         
     def label(self):
-        return self.__str__()
+        ret = []
+
+        ret.append(str(self.records['NAME'][0]))
+        if self.get('BIRT') is not None and self.get('BIRT').get('DATE') is not None:
+            ret.append('  b. '+str(self.get('BIRT').getValue('DATE')))
+        if self.get('DEAT') is not None and self.get('DEAT').get('DATE') is not None:
+            ret.append('  d. '+str(self.get('DEAT').getValue('DATE')))
+        return '\n'.join(ret)
 
     def __str__(self):
         ret = []
@@ -251,18 +271,30 @@ class IndividualRecord (LineageLinkedRecord):
             ret.append('  b. '+str(self.get('BIRT')))
         if self.get('DEAT') is not None:
             ret.append('  d. '+str(self.get('DEAT')))
-        if self.get('_URL') is not None:
-            ret.append('  '+str(self.getValue('_URL')))
+        if self.get('WWW') is not None:
+            ret.append('  '+str(self.getValue('WWW')))
         return '\n'.join(ret)
 
+class UserReferenceNumberRecord (LineageLinkedRecord):
+    def __init__(self,rec,h):
+        LineageLinkedRecord.__init__(self,rec,h)
 
-handlers = {'_BIO':BioRecord,
-                 'OBJE':ObjectRecord,
-                 'NAME':NameRecord,
-                 'SURN':SurnameRecord,
-                 'BIRT':EventRecord,
-                 'DEAT':EventRecord,
-               }
+    def getType(self):
+        t = self.get('TYPE')
+        if t is not None:
+            return t.value
+        
+
+handlers['INDI'] = IndividualRecord
+handlers['FAM']=FamilyRecord
+handlers['NOTE']=NoteRecord
+handlers['OBJE']=ObjectRecord
+handlers['NAME']=NameRecord
+handlers['SURN']=SurnameRecord
+handlers['BIRT']=EventRecord
+handlers['DEAT']=EventRecord
+handlers['MARR']=EventRecord
+handlers['REFN']=UserReferenceNumberRecord
 
 
 ## {{{ http://code.activestate.com/recipes/52213/ (r1)
@@ -302,9 +334,11 @@ if __name__ == '__main__':
     g = Gedcom(sys.argv[1])
     llg = LineageLinkedGedcom(g)
     for i in llg.individuals:
+        print i.get('NAME')
         if i.records.has_key('OBJE'):
             print i
             for o in i.records['OBJE']:
                 print o
+        print i.reference_numbers
 
     

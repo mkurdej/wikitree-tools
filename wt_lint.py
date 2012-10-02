@@ -12,7 +12,7 @@ llg = gedcom.LineageLinkedGedcom(g)
 
 for i in llg.individuals:
 	
-    if i.records.has_key('_URL'):
+    if i.records.has_key('WWW'):
         problems = []
         if i.get('SEX') is None:
             problems.append('sex not defined')
@@ -20,7 +20,7 @@ for i in llg.individuals:
             if obj.get('FORM').value == 'Message':
                 if obj.get('TEXT').value.lower().find('todo') != -1:
                     problems.append('todo found in message')
-        if i.get('_BIO').get('TEXT').value.lower().find('todo') != -1:
+        if i.get('NOTE').get('TEXT').value.lower().find('todo') != -1:
             problems.append('todo found in bio')
         if len(problems):
             print
