@@ -6,6 +6,8 @@ V5.5 specs: http://homepages.rootsweb.ancestry.com/~pmcbride/gedcom/55gctoc.htm
 V5.5.1 specs: http://www.phpgedview.net/ged551-5.pdf
 '''
 
+import datetime
+
 class GedcomRecord:
     def __init__(self,line):
         parts = line.strip().split(' ',1)
@@ -189,6 +191,18 @@ class EventRecord (LineageLinkedRecord):
     def __str__(self):
         return str(self.getValue('DATE'))+' ' +str(self.getValue('PLAC'))
 
+class DateRecord (LineageLinkedRecord):
+    def __init__(self,rec,h):
+        LineageLinkedRecord.__init__(self,rec,h)
+
+    def asDate(self):
+        parts = self.value.split()
+        if parts[0] in ('ABT','BEF','AFT'):
+            parts = parts[1:]
+        fmt = ' '.join(('%d','%b','%Y')[-len(parts):])
+        if fmt:
+            return datetime.datetime.strptime(' '.join(parts),fmt).date()
+
 class NameRecord (LineageLinkedRecord):
     def __init__(self,rec,h):
         LineageLinkedRecord.__init__(self,rec,h)
@@ -252,6 +266,20 @@ class IndividualRecord (LineageLinkedRecord):
 
     def isName(self,n):
         return str(self.get('NAME')) == n
+
+    def getAge(self):
+        birth = None
+        if self.get('BIRT') is not None and self.get('BIRT').get('DATE') is not None:
+            birth = self.get('BIRT').get('DATE').asDate()
+
+        death = None
+        if self.get('DEAT') is not None and self.get('DEAT').get('DATE') is not None:
+            death = self.get('DEAT').get('DATE').asDate()
+
+        if birth is not None and death is not None:
+            return (death - birth).days/365.25
+        if birth is not None:
+            return (datetime.date.today() - birth).days/365.25
         
     def label(self):
         ret = []
@@ -262,6 +290,20 @@ class IndividualRecord (LineageLinkedRecord):
         if self.get('DEAT') is not None and self.get('DEAT').get('DATE') is not None:
             ret.append('  d. '+str(self.get('DEAT').getValue('DATE')))
         return '\n'.join(ret)
+
+    def html(self):
+        ret = []
+        if self.get('WWW') is not None:
+            ret.append('<h2><a href="'+str(self.getValue('WWW'))+'" target="_blank">'+str(self.records['NAME'][0])+'</a></h2>')
+        else:
+            ret.append('<h2>'+str(self.records['NAME'][0])+'</h2>')
+        ret.append('<el>')
+        ret.append('<li>b. '+str(self.get('BIRT'))+'</li>')
+        ret.append('<li>d. '+str(self.get('DEAT'))+'</li>')
+        ret.append('</el>')
+
+        return '\n'.join(ret)
+ 
 
     def __str__(self):
         ret = []
@@ -295,6 +337,7 @@ handlers['BIRT']=EventRecord
 handlers['DEAT']=EventRecord
 handlers['MARR']=EventRecord
 handlers['REFN']=UserReferenceNumberRecord
+handlers['DATE']=DateRecord
 
 
 ## {{{ http://code.activestate.com/recipes/52213/ (r1)
@@ -335,10 +378,11 @@ if __name__ == '__main__':
     llg = LineageLinkedGedcom(g)
     for i in llg.individuals:
         print i.get('NAME')
+        print i.getAge()
         if i.records.has_key('OBJE'):
             print i
             for o in i.records['OBJE']:
                 print o
-        print i.reference_numbers
+        #print i.reference_numbers
 
     
