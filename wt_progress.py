@@ -27,31 +27,45 @@ if root is None:
 generations = [[root]]
 cur_gen = 0
 
+www_missing = []
+
 while cur_gen < len(generations):
     for i in generations[cur_gen]:
         f = i.getValue('FAMC')
         if f is None:
             print cur_gen, 
-            if i.get('_URL') is not None:
-                print i.get('_URL').value,
+            if i.get('WWW') is not None:
+                print i.get('WWW').value,
             print '\t'+str(i.get('NAME')),'missing parents'
         else:
             if len(generations) <= cur_gen+1:
                 generations.append([])
             if f.getValue('HUSB') is None:
                 print cur_gen, 
-                if i.get('_URL') is not None:
-                    print i.get('_URL').value,
+                if i.get('WWW') is not None:
+                    print i.get('WWW').value,
                 print '\t',i.get('NAME'),'missing father'
             else:
                 generations[cur_gen+1].append(f.getValue('HUSB'))
+                if f.getValue('HUSB').get('WWW') is None and i not in www_missing:
+                    print cur_gen,'WWW\t', 
+                    if i.get('WWW') is not None:
+                        print i.get('WWW').value,
+                    print '\t',i.get('NAME'),'father is missing WWW link'
+                    www_missing.append(i)
             if f.getValue('WIFE') is None:
                 print cur_gen,
-                if i.get('_URL') is not None:
-                    print i.get('_URL').value,
+                if i.get('WWW') is not None:
+                    print i.get('WWW').value,
                 print '\t',i.get('NAME'),'missing mother'
             else:
                 generations[cur_gen+1].append(f.getValue('WIFE'))
+                if f.getValue('WIFE').get('WWW') is None and i not in www_missing:
+                    print cur_gen,'WWW\t',
+                    if i.get('WWW') is not None:
+                        print i.get('WWW').value,
+                    print '\t',i.get('NAME'),'mother is missing WWW link'
+                    www_missing.append(i)
     cur_gen += 1
 
 for i in range (len(generations)):
