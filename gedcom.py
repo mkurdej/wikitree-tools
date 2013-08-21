@@ -42,7 +42,8 @@ class GedcomRecord:
             raise 'invalid record level'
         if rec.level == self.level+1:
             if rec.tag == 'CONC':
-                self.value += rec.value
+                if rec.value is not None:
+                    self.value += rec.value
             elif rec.tag == 'CONT':
                 if rec.value is not None:
                     self.value += rec.value
