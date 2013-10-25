@@ -1,4 +1,4 @@
-# Copyright Roland Arsenault
+// Copyright Roland Arsenault
 
 var anchorProfile;
 

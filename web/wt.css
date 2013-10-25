@@ -1,0 +1,6 @@
+div.wt-login {
+   position:absolute;
+   z-index:1000;
+   background-color:white;
+   border: 1px solid black;
+}
