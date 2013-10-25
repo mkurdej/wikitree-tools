@@ -1,0 +1,30 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <link rel="stylesheet" href="wt.css" type="text/css" />
+</head>
+<body>
+    <div id="status"></div>
+    <div id="person_details"></div>
+</body>
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+<script src="/apps/jquery.cookie.js"></script>
+<script src="wtSession.js"></script>
+<script src="wtPerson.js"></script>
+<script type="text/javascript">
+
+$(document).ready(function(){
+  wt.init($('#status'));
+  wt.onLogin(function(){
+    wt.getRootPerson().load(function(rootPerson){
+      $('#person_details').html(JSON.stringify(rootPerson));
+    });
+  });
+  wt.onLogout(function(){
+    $('#person_details').html("(not logged in)");
+  });
+});
+
+</script>
+</html>
