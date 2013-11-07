@@ -22,6 +22,13 @@
         } else {
           for(var attrib in data[0].person)
             self[attrib] = data[0].person[attrib];
+          if (self.Father != undefined){
+            self.Father = wt.getPerson(self.Father);
+          }
+          if (self.Mother != undefined){
+            self.Mother = wt.getPerson(self.Mother);
+          }
+
           $.post('/api.php', {
             'action': 'getPerson', 'key': self.user_id, 'fields': 'Id,Siblings,Spouses,Children', 'format': 'json' 
             }).done(function(data) { 
