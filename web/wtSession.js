@@ -130,6 +130,13 @@
     return wt.session.rootProfile;
   }
   
+  wt.getPerson = function(user_id){
+    if(wt.session.profiles[user_id] == undefined){
+      wt.session.profiles[user_id] = new wt.Person(user_id);
+    }
+    return wt.session.profiles[user_id];
+  }
+  
   wt.onLogin = function(loginCallback){
     wt.session.onLogin(loginCallback);
   }
