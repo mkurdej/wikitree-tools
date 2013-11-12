@@ -5,7 +5,7 @@
   wt.Person = function(user_id){
     this.user_id = user_id;
     this.loaded = false;
-  }
+  };
 
   wt.Person.prototype.load = function(callback){
     if(!this.loaded && !this.loading){
@@ -43,7 +43,7 @@
         }
       });
     } else if(callback != undefined)
-      callback(self);
-  }
+      callback(this);
+  };
   
 })(window.wt = window.wt || {}, jQuery);

@@ -8,9 +8,8 @@
     this.loggedIn = false;
     this.profiles = {};
     this.$statusDiv = $(statusDiv);
-    var self = this;
     this.checkLogin();
-  }
+  };
   
   wt.Session.prototype.setLoggedIn = function(loggedIn){
     var doCallback = this.loggedIn != loggedIn;
@@ -29,12 +28,12 @@
       if(!this.loggedIn && this.logoutCallback)
         this.logoutCallback();
     }
-  }
+  };
 
   wt.Session.prototype.setStatusDiv = function(statusDiv){
     this.$statusDiv = $(statusDiv);
     this.updateStatus();
-  }
+  };
   
   wt.Session.prototype.updateStatus = function(){
     if(this.$statusDiv){
@@ -49,17 +48,17 @@
         this.$statusDiv.append($login);
       }
     }
-  }
+  };
 
   wt.Session.prototype.onLogout = function(callback){
     this.logoutCallback = callback;
-  }
+  };
 
   wt.Session.prototype.onLogin = function(callback){
     this.loginCallback = callback;
     if(this.loggedIn && this.loginCallback)
       this.loginCallback();
-  }
+  };
   
   wt.Session.prototype.logout = function(callback){
     var self = this;
@@ -68,7 +67,7 @@
       if(callback != undefined)
         callback();
     });
-  }
+  };
   
   wt.Session.prototype.checkLogin = function(callback){
   	if (this.user_id && this.user_name) { 
@@ -90,7 +89,7 @@
       if(callback != undefined)
         callback(false);
     }
-  }
+  };
   
   wt.Session.prototype.loginPrompt = function(callback){
     var self = this;
@@ -124,29 +123,29 @@
     $prompt = $('<div class="wt-login">');
     $prompt.append($form);
     $('body').append($prompt);
-  }
+  };
   
   wt.getRootPerson = function(){
     return wt.session.rootProfile;
-  }
+  };
   
   wt.getPerson = function(user_id){
     if(wt.session.profiles[user_id] == undefined){
       wt.session.profiles[user_id] = new wt.Person(user_id);
     }
     return wt.session.profiles[user_id];
-  }
+  };
   
   wt.onLogin = function(loginCallback){
     wt.session.onLogin(loginCallback);
-  }
+  };
 
   wt.onLogout = function(logoutCallback){
     wt.session.onLogout(logoutCallback);
-  }
+  };
 
   wt.init = function(statusDiv){
     wt.session = new wt.Session(statusDiv);
-  }
+  };
   
 })(window.wt = window.wt || {}, jQuery);

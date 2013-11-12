@@ -4,21 +4,26 @@ body {
 
 #tree {
   position: absolute;
-  width: 45%;
-  height: 60%;
-  top: 15%;
-  left: 2.5%;
+  width: 49%;
+  height: 95%;
   border: solid;
   overflow: hidden;
 }
 
+#tree-content {
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+}
+
+
 #wikitree {
   position:absolute;
-  left: 50%;
-  top: 10px;
-  width: 45%;
+  left: 50.0%;
+/*   top: 10px; */
+  width: 49%;
   border: solid;
-  height: 80%;
+  height: 95%;
 }
 
 #wt-frame-view {
@@ -34,24 +39,21 @@ body {
 
 .profile {
   border: solid;
-  display: inline-block
+  display: inline-block;
+  width: 10em;
+  height: 5em;
 }
 
 .Male {
-  background: rgba(128,128,255,1);
-  border: solid;
-  display: inline-block
+  background: rgba(175,175,255,1);
 }
 
 .Female {
-  background: rgba(255,128,128,1);
-  border: solid;
-  display: inline-block
+  	background: rgba(255,175,175,1);
 }
 
 .Unknown {
-  background: rgba(128,128,128,1);
-  border: solid;
-  display: inline-block
+  background: rgba(175,175,175,1);
 }
+
 
