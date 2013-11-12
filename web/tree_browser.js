@@ -1,97 +1,92 @@
 // Copyright Roland Arsenault
 
-var anchorProfile;
+var treeDisplay;
 
-function ProfileDisplayNode(profile){
-  this.profile = profile;
-  this.div = $(document.createElement( "div" ));
-  this.div.prop("class","profile");
-  this.fatherDisplayNode = null;
-  this.motherDisplayNode = null;
- 
-  table = $(document.createElement("table"));
-  this.div.append(table);
-  
-  row = $(document.createElement("tr"));
-  row.append('<td></td>');
-  data = $(document.createElement("td"));
-  this.fatherDiv = $(document.createElement("div"));
-  data.append(this.fatherDiv);
-  row.append(data);
-  table.append(row);
-  
-  row = $(document.createElement("tr"));
-  data = $(document.createElement("td"));
-  this.nameDiv = $(document.createElement( "div" ));
-  this.nameDiv.prop("class","unknown");
-  data.append(this.nameDiv);
-  row.append(data);
-  
-  var self = this;
-  data = $(document.createElement("td"));
-  this.showParents = $(document.createElement("button"));
-  this.showParents.html("-");
-
-  this.showParents.click(function(){
-    self.load();
-    if(self.showParents.html() == "-"){
-      self.showParents.html("+");
-      self.fatherDiv.hide(400);
-      self.motherDiv.hide(400);
-    } else  {
-      self.showParents.html("-");
-      self.fatherDiv.show(400);
-      self.motherDiv.show(400);
-    }
-  });
-  data.append(this.showParents);
-  row.append(data);
-  table.append(row);
-
-  row = $(document.createElement("tr"));
-  row.append('<td></td>');
-  data = $(document.createElement("td"));
-  this.motherDiv = $(document.createElement("div"));
-  data.append(this.motherDiv);
-  row.append(data);
-  table.append(row);
-  
-
-  profile.load(function(){
-    self.nameDiv.html(profile.FirstName+" "+profile.LastNameCurrent);
-    self.nameDiv.prop("class",profile.Gender);
-    self.nameDiv.click(function(){
-      url = "/wiki/"+profile.Name
-      $("#wt-frame-view").prop("src",url);
-    });
-  });
+function TreeDisplay(anchorProfile,treeDiv){
+	this.treeDiv = treeDiv;
+	this.addProfileDisplayNode(anchorProfile);
+	this.center = 1;
 }
 
-ProfileDisplayNode.prototype.load = function(){
-  if(this.fatherDisplayNode == null && this.profile.Father != undefined){
-    this.fatherDisplayNode = new ProfileDisplayNode(this.profile.Father);
-    this.fatherDiv.append(this.fatherDisplayNode.div);
-  }
-  if(this.motherDisplayNode == null && this.profile.Mother != undefined){
-    this.motherDisplayNode = new ProfileDisplayNode(this.profile.Mother);
-    this.motherDiv.append(this.motherDisplayNode.div);
-  }
-}
+TreeDisplay.prototype.layout = function(){
+	var baseOffset = this.treeDiv.offset();
+	var baseWidth = this.treeDiv.innerWidth();
+	var baseHeight = this.treeDiv.innerHeight();
+	
+	var centerGen =  Math.floor(Math.log(this.center)/Math.LN2);
+	var centerGenSize = Math.pow(2,centerGen);
+	var centerGenPos = this.center-centerGenSize;
+	
+	var center = {
+		left: baseOffset.left+baseWidth/2,
+		top: baseOffset.top+baseHeight/2
+	};
+	
+	$(".profile",this.treeDiv).each(function(index){
+		console.log(index,this);
+		var $this = $(this);
+		var anum = $this.data("ahnentafel");
+		gen = Math.floor(Math.log(anum)/Math.LN2);
+		genSize = Math.pow(2,gen);
+		genPos = anum-genSize;
+		console.log("Generation: "+gen,'size',genSize,'pos',genPos);
+		var xOffset = $this.outerWidth() * (-.5+1.1*(gen-centerGen));
+		var yOffset = $this.outerHeight() * ((genPos-genSize/2)-(centerGenPos-centerGenSize/2))*1.1;
+		$this.offset({
+			left:center.left+xOffset,
+			top:center.top+yOffset
+		});
+	});
+};
+
+TreeDisplay.prototype.addProfileDisplayNode = function (profile,aNum){
+	var retDiv = $(document.createElement( "div" ));
+	retDiv.data("profile",profile);
+	if(aNum == undefined){
+		aNum = 1;
+	}
+	retDiv.data("ahnentafel", aNum);
+	  
+	retDiv.prop("class","profile");
+	  
+	var header = $(document.createElement( "div" ));
+	header.prop("class","unknown");
+	retDiv.append(header);
+	
+	var nameDisplay = $(document.createElement( "span" ));
+	nameDisplay.css("width","90%");
+	header.append(nameDisplay);
+	  
+	var plus = $(document.createElement( "button" ));
+	plus.html("+");
+	plus.attr("type","button");
+	header.append(plus);
+	  
+	var self = this;
+	
+	plus.click(function(){
+		self.center = aNum;
+		self.addProfileDisplayNode(profile.Father, aNum*2);
+		self.addProfileDisplayNode(profile.Mother, aNum*2+1);
+		plus.remove(); 
+  	});
+	
+	
+	profile.load(function(){
+		nameDisplay.html(profile.FirstName+" "+profile.LastNameCurrent);
+		header.prop("class",profile.Gender);
+		retDiv.append('<a href="/wiki/'+profile.Name+'" target="wt-frame-view"+>View Profile</a>');
+	});
+	this.treeDiv.append(retDiv);
+	this.layout();
+};
 
 
 function init(){
-  $("#wikitree").resizable();
-  $("#wikitree").draggable();
-  $("#tree").resizable();
-  $("#tree").draggable();
-  
   wt.init($('#status'));
   wt.onLogin(function(){
     wt.getRootPerson().load(function(rootPerson){
-      anchorProfile = rootPerson;
-      var anchorProfileDisplay = new ProfileDisplayNode(anchorProfile);
-      $("#tree").append(anchorProfileDisplay.div);
-      anchorProfileDisplay.div.draggable();
+    	treeDisplay = new TreeDisplay(rootPerson,$("#tree-content"));
     });
   });
 }
