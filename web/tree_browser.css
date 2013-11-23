@@ -4,7 +4,7 @@ body {
 
 #tree {
   position: absolute;
-  width: 49%;
+  width: 95%;
   height: 95%;
   border: solid;
   overflow: hidden;
@@ -13,15 +13,15 @@ body {
 #tree-content {
   width: 100%;
   height: 100%;
-  overflow: auto;
+  overflow: hidden;
 }
 
 
 #wikitree {
   position:absolute;
-  left: 50.0%;
+  left: 75.0%;
 /*   top: 10px; */
-  width: 49%;
+  width: 24%;
   border: solid;
   height: 95%;
 }
@@ -42,6 +42,10 @@ body {
   display: inline-block;
   width: 10em;
   height: 5em;
+  left: 0;
+  top: 0;
+  position: absolute;
+  display: none;
 }
 
 .Male {
