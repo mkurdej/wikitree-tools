@@ -2,7 +2,7 @@
   "manifest_version": 2,
   "name": "WikiTree Tools",
   "description": "This extension add useful tools while working on WikiTree.",
-  "version": "0.1",
+  "version": "0.0.1",
 
   "permissions": [
     "http://*.wikitree.com/"
