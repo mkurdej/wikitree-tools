@@ -3,7 +3,10 @@
   "name": "WikiTree Tools",
   "description": "This extension add useful tools while working on WikiTree.",
   "version": "0.0.1",
-
+    "icons": { "16": "icon16.png",
+        "48": "icon48.png",
+        "128": "icon128.png"
+    },
   "permissions": [
     "http://*.wikitree.com/"
   ],
