@@ -1,8 +1,9 @@
 
 chrome.runtime.onMessage.addListener(
   function(request, sender, sendResponse) {
-      console.log(request);
-      wt_data = request;
-      chrome.pageAction.show(sender.tab.id);
+      if (request == "showPopup")
+    	  chrome.pageAction.show(sender.tab.id);
+      if (request == "hidePopup")
+    	  chrome.pageAction.hide(sender.tab.id);
       sendResponse({});
   });
