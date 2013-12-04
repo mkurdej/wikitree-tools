@@ -1,21 +1,32 @@
 
 tablify = function(value){
-    var ret = $("<table>");
+    var ret = $('<table>');
     for(var i in value){
-        for(var j = 0; j < value[i].length; j++){
+    	if(typeof value[i] == 'string'){
             var row = $("<tr>");
-            var data = $("<td>");
+            var data = $('<td style="background-color: #E0E0E0">');
             data.html(i);
             row.append(data);
             data = $("<td>");
-            if(typeof value[i][j] == "string"){
-                data.html(value[i][j]);
-            } else {
-                data.append(tablify(value[i][j]));
-            }
+            data.html(value[i]);
             row.append(data);
             ret.append(row);
-        }
+    	}else{
+            for(var j = 0; j < value[i].length; j++){
+                var row = $("<tr>");
+                var data = $('<td style="background-color: #E0E0E0">');
+                data.html(i);
+                row.append(data);
+                data = $("<td>");
+                if(typeof value[i][j] == "string"){
+                    data.html(value[i][j]);
+                } else {
+                    data.append(tablify(value[i][j]));
+                }
+                row.append(data);
+                ret.append(row);
+            }
+    	}
     }
     return ret;
 };
@@ -53,12 +64,20 @@ scan = function(){
     var $person = $("html[itemscope][itemtype='http://schema.org/Person']");
     if($person.length){
         var data = parseItem($person);
+        data.id = urlToId(data.url[0]);
         return {person:data};
     }
 };
 
+urlToId = function(url){
+    var parts = url.split('/');
+    return parts[parts.length-1];
+};
+
 lint = function(data){
-	var ret = [];
+	var ret = $('<span>');
+	var ok = true;
+
     var age = undefined;
     var status = 'error';
     var birth = undefined;
@@ -81,7 +100,9 @@ lint = function(data){
             }
         }
     }
-    ret.push({status:status,message:"age: "+age});
+    if(status != 'ok')
+    	ok = false;
+    ret.append($('<span class="wt-tools-'+status+'">age: '+age+'</span>'));
 
     if(data.person.marriage != undefined){
         for(var i = 0; i < data.person.marriage.length; i++){
@@ -108,55 +129,110 @@ lint = function(data){
                 md = new Date(md.getTimezoneOffset()*60000+md.getTime());
                 md = md.toDateString();
             }
-            ret.push({status:status,message:"marriage date: " + md + " age: " + marriageAge});
+            if(status != 'ok')
+            	ok = false;
+            ret.append($('<span class="wt-tools-'+status+'">marriage date: '+md+' age: '+marriageAge+'</span>'));
         }
     }
 
     if(data.person.gender=="unknown"){
-    	ret.push({status:"warning", message:"gender unknown"});
+    	ret.append($('<span class="wt-tools-warning">gender unknown</span>'));
+    	ok = false;
     }
-    return ret;
+    
+    if((birth || death) && data.person.parent != undefined){
+        for(var i = 0; i < data.person.parent.length; i++){
+        	chrome.runtime.sendMessage({command:'get', id:urlToId(data.person.parent[i].url[0])}, function(response) {
+        		var person = response.person;
+        		if(person){
+                    var parent = 'parent';
+                    if (person.gender[0] == 'male')
+                    	parent = 'father';
+                    else if (person.gender[0] == 'female')
+                    	parent = 'mother';
+                    var parentAge = undefined;
+                    var parentBirthDate = undefined;
+                    if(person.birthDate[0] != undefined){
+                        parentBirthDate = new Date(person.birthDate[0]);
+                        if(parentBirthDate != undefined){
+                            var status = "ok";
+                            parentAge = birth - parentBirthDate;
+                            parentAge /= 3600000;
+                            parentAge /= 24;
+                            parentAge = Math.floor(parentAge/365.25);
+                            if(parentAge < 12)
+                                status = "error";
+                            else if(parentAge <= 14 || parentAge > 60)
+                                status = "warning";
+                            ret.append($('<span class="wt-tools-'+status+'">'+parent+"'"+'s age at birth: '+parentAge+'</span>'));
+                        }
+                    }
+        		} else {
+        			ret.append($('<span class="wt-tools-warning">parent '+response.id+' not loaded</span>'));
+        		}
+    		});        	
+        	
+        }
+    }
+    
+    
+    return {ok:ok, span:ret};
 };
 
 
 main = function(){
 	var data = scan();
 	if(data != undefined){
-		var ret = lint(data);
-		var ok = true;
+		chrome.runtime.sendMessage({command:'add', person:data.person}, function(response) {
+		});
+
+		var results = lint(data);
 		var $status = $("<div>");
 		$status.addClass("wt-tools");
 		$status.append("WikiTree Tools:");
-		for(var i = 0; i<ret.length; ++i){
-			if(ret[i].status != "ok")
-				ok = false;
-			var span = $("<span>");
-			span.addClass("wt-tools-"+ret[i].status);
-			span.html(ret[i].message);
-			$status.append(span);
-		}
+		$status.append(results.span);
+
+		var dataDiv = $('<div style="display: none">');
+		dataDiv.append(tablify(data.person));
 		
 		var $button = $('<button type="button" style="float: right;">Hide</button>');
 		$button.click(function(){
 			$status.hide(500);
-			chrome.runtime.sendMessage("showPopup", function(response) {
+			chrome.runtime.sendMessage({command:"showPopup"}, function(response) {
 			});
 		});
 	
 		$status.append($button);
+		
+		var $showDataButton = $('<button type="button" style="float: right;">Show Data</button>');
+		$showDataButton.click(function(){
+			if($showDataButton.html() == 'Show Data'){
+				dataDiv.show(500);
+				$showDataButton.html('Hide Data');
+			} else {
+				dataDiv.hide(500);
+				$showDataButton.html('Show Data');
+			}
+		});
+	
+		$status.append($showDataButton);
+
+		$status.append(dataDiv);
+
+		
 		$("body").prepend($status);
 		
-		if(!ok){
+		if(!results.ok){
 			$status.show(500);
 		} else {
-			chrome.runtime.sendMessage("showPopup", function(response) {
+			chrome.runtime.sendMessage({command:"showPopup"}, function(response) {
 			});
 		}
 		
 		chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
 		    if (request == "showStatus"){
 			      $status.show(500);
-			      chrome.runtime.sendMessage("hidePopup", function(response) {
+			      chrome.runtime.sendMessage({command:"hidePopup"}, function(response) {
 					});
 		    }
 		    sendResponse();
