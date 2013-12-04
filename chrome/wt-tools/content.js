@@ -180,7 +180,27 @@ lint = function(data){
 };
 
 
+
 main = function(){
+	var $editBox = $('#wpTextbox1');
+	if($editBox.length){
+		var unsavedChanges = false;
+		
+		$editBox.keydown(function(){
+			unsavedChanges = true;
+		});
+
+		$('input[name=wpSave]').mousedown(function(){
+			unsavedChanges = false;
+		});
+		
+		window.onbeforeunload = function() {
+		  if (unsavedChanges && $editBox[0].defaultValue != $editBox[0].value) return 'You have unsaved changes!';
+		};
+		
+	}
+	
+	
 	var data = scan();
 	if(data != undefined){
 		chrome.runtime.sendMessage({command:'add', person:data.person}, function(response) {
