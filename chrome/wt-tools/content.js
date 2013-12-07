@@ -182,23 +182,26 @@ lint = function(data){
 
 
 main = function(){
-	var $editBox = $('#wpTextbox1');
-	if($editBox.length){
-		var unsavedChanges = false;
+	chrome.runtime.sendMessage({command:'getConfirmExit'}, function(response) {
+		if(response){
+			var $editBox = $('#wpTextbox1');
+			if($editBox.length){
+				var unsavedChanges = false;
+				
+				$editBox.keydown(function(){
+					unsavedChanges = true;
+				});
 		
-		$editBox.keydown(function(){
-			unsavedChanges = true;
-		});
-
-		$('input[name=wpSave]').mousedown(function(){
-			unsavedChanges = false;
-		});
-		
-		window.onbeforeunload = function() {
-		  if (unsavedChanges && $editBox[0].defaultValue != $editBox[0].value) return 'You have unsaved changes!';
-		};
-		
-	}
+				$('input[name=wpSave]').mousedown(function(){
+					unsavedChanges = false;
+				});
+				
+				window.onbeforeunload = function() {
+				  if (unsavedChanges && $editBox[0].defaultValue != $editBox[0].value) return 'You have unsaved changes!';
+				};
+			}
+		}
+	});
 	
 	
 	var data = scan();
@@ -223,6 +226,14 @@ main = function(){
 		});
 	
 		$status.append($button);
+
+		var $optionsButton = $('<button type="button" style="float: right;">Options</button>');
+		$optionsButton.click(function(){
+			chrome.runtime.sendMessage({command:"showOptions"}, function(response) {
+			});
+		});
+	
+		$status.append($optionsButton);
 		
 		var $showDataButton = $('<button type="button" style="float: right;">Show Data</button>');
 		$showDataButton.click(function(){

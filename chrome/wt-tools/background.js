@@ -1,6 +1,11 @@
 
 var people = {};
 
+if(localStorage["confirmExit"]==undefined){
+	localStorage["confirmExit"]=true;
+}
+
+
 chrome.runtime.onMessage.addListener(
   function(request, sender, sendResponse) {
 	  var cmd = request.command;
@@ -13,6 +18,11 @@ chrome.runtime.onMessage.addListener(
     	  chrome.pageAction.show(sender.tab.id);
       } else if (cmd == "hidePopup") {
     	  chrome.pageAction.hide(sender.tab.id);
+      } else if (cmd == "getConfirmExit") {
+    	  sendResponse(localStorage["confirmExit"]=="true");
+    	  return;
+      } else if (cmd == "showOptions") {
+    	  chrome.tabs.create({url:'options.html'});
       }
       sendResponse();
   });
