@@ -2,7 +2,7 @@
   "manifest_version": 2,
   "name": "WikiTree Tools",
   "description": "This extension add useful tools while working on WikiTree.",
-  "version": "0.0.3",
+  "version": "0.0.4",
     "icons": { "16": "icon16.png",
         "48": "icon48.png",
         "128": "icon128.png"
@@ -22,11 +22,13 @@
     "default_title": "WikiTree Tools"
   },
 
-    "content_scripts": [
-        {
-            "matches": ["http://*.wikitree.com/*"],
-            "js": ["jquery-2.0.3.min.js","content.js"],
-            "css": ["content.css"]
-        }
-    ]
+  "content_scripts": [
+    {
+      "matches": ["http://*.wikitree.com/*"],
+      "js": ["jquery-2.0.3.min.js","content.js"],
+      "css": ["content.css"]
+    }
+  ],
+    
+  "options_page": "options.html"
 }
