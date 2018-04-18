@@ -42,7 +42,7 @@ def write_report_header(filename, opts, output):
     output.write('</el>\n')
 
 
-def check_individual(individual, opts, maxage, output, out):
+def check_individual(individual, opts, maxage):
     if not individual.records.has_key('WWW'):
         return
 
@@ -63,20 +63,27 @@ def check_individual(individual, opts, maxage, output, out):
                 problems.append('todo found in message')
     if individual.get('NOTE').get('TEXT').value.lower().find('todo') != -1:
         problems.append('todo found in bio')
-    if problems:
-        if output is not None:
-            output.write(individual.html() + '\n')
-            output.write('<h3>Problems:</h3>\n')
-            output.write('<e1>\n')
-            for problem in problems:
-                output.write('<li>' + problem + '</li>\n')
-            output.write('</e1>\n')
-        out('')
-        out('\n'.join(problems))
-        out(individual)
-        for obj in individual.getAll('OBJE'):
-            if obj.get('FORM').value == 'Message':
-                out(obj.get('TEXT').value)
+
+    return problems
+
+def write_problems(individual, problems, output, out):
+    if not problems:
+        return
+
+    if output is not None:
+        output.write(individual.html() + '\n')
+        output.write('<h3>Problems:</h3>\n')
+        output.write('<e1>\n')
+        for problem in problems:
+            output.write('<li>' + problem + '</li>\n')
+        output.write('</e1>\n')
+
+    out('')
+    out('\n'.join(problems))
+    out(individual)
+    for obj in individual.getAll('OBJE'):
+        if obj.get('FORM').value == 'Message':
+            out(obj.get('TEXT').value)
 
 
 def lint(filename, options, out=print_to_console):
@@ -97,7 +104,8 @@ def lint(filename, options, out=print_to_console):
         write_report_header(filename, opts, output)
 
     for individual in llg.individuals:
-        check_individual(individual, opts, maxage, output, out)
+        problems = check_individual(individual, opts, maxage)
+        write_problems(individual, problems, output, out)
 
     if output is not None:
         output.write('</body></html>\n')
