@@ -68,8 +68,14 @@ def check_individual(individual, opts, maxage):
         if obj.get('FORM').value == 'Message':
             if obj.get('TEXT').value.lower().find('todo') != -1:
                 problems.append('todo found in message')
-    if individual.get('NOTE').get('TEXT').value.lower().find('todo') != -1:
-        problems.append('todo found in bio')
+
+    note = individual.get('NOTE')
+    if note:
+        for tag in ['CONT', 'CONC', 'TEXT']:
+            text = note.get(tag)
+            if text:
+                if text.value.lower().find('todo') != -1:
+                    problems.append('todo found in bio')
 
     return problems
 
