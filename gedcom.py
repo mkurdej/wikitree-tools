@@ -7,12 +7,16 @@ V5.5 specs: http://homepages.rootsweb.ancestry.com/~pmcbride/gedcom/55gctoc.htm
 V5.5.1 specs: http://www.phpgedview.net/ged551-5.pdf
 '''
 
+from __future__ import print_function
 import datetime
 
 
 class GedcomRecord(object):
     def __init__(self, line):
         parts = line.strip().split(' ', 1)
+
+        print(parts)
+
         self.level = int(parts[0])
 
         parts = parts[1].split(' ', 1)
@@ -154,9 +158,9 @@ class LineageLinkedRecord(object):
 
         for r in rec.sub_records:
             if not self.handleRecord(r):
-                # print rec
+                # print(rec)
                 #raise Exception('record not handled: '+r.tag+' in '+rec.tag)
-                print 'record not handled: ' + r.tag + ' in ' + rec.tag
+                print('record not handled: ' + r.tag + ' in ' + rec.tag)
 
     def handleRecord(self, rec):
         try:
@@ -390,10 +394,10 @@ if __name__ == '__main__':
     g = Gedcom(sys.argv[1])
     llg = LineageLinkedGedcom(g)
     for i in llg.individuals:
-        print i.get('NAME')
-        print i.getAge()
+        print(i.get('NAME'))
+        print(i.getAge())
         if i.records.has_key('OBJE'):
-            print i
+            print(i)
             for o in i.records['OBJE']:
-                print o
-        # print i.reference_numbers
+                print(o)
+        # print(i.reference_numbers)

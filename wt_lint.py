@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 # pylint: disable=C0111
 
+from __future__ import print_function
 import datetime
 import gedcom
 
-
 def print_to_console(data=''):
-    print data
+    print(data)
 
 
 def parse_options(options, out):
@@ -120,9 +120,9 @@ if __name__ == '__main__':
     import sys
 
     if len(sys.argv) < 2:
-        print 'usage: wt_lint.py gedcom.ged [options]'
-        print '\toptions:'
-        print '\t\toutput=report.html'
+        print('usage: wt_lint.py gedcom.ged [options]')
+        print('\toptions:')
+        print('\t\toutput=report.html')
         exit(1)
 
     lint(sys.argv[1], sys.argv[2:])
