@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# pylint: disable=C0111
 
 ''' Classes for parsing a GEDCOM file.
 More info on GEDCOM:  http://en.wikipedia.org/wiki/GEDCOM
@@ -9,7 +10,7 @@ V5.5.1 specs: http://www.phpgedview.net/ged551-5.pdf
 import datetime
 
 
-class GedcomRecord:
+class GedcomRecord(object):
     def __init__(self, line):
         parts = line.strip().split(' ', 1)
         self.level = int(parts[0])
@@ -63,7 +64,7 @@ class GedcomRecord:
         return '\n'.join(ret)
 
 
-class Gedcom:
+class Gedcom(object):
     def __init__(self, fname):
         self.xref_ids = {}
         self.records = []
@@ -89,7 +90,7 @@ class Gedcom:
 handlers = {}
 
 
-class LineageLinkedGedcom:
+class LineageLinkedGedcom(object):
     def __init__(self, gedcom, h=handlers):
         self.gedcom = gedcom
         self.handlers = h
@@ -142,7 +143,7 @@ class LineageLinkedGedcom:
                             i.value = self.index[i.value]
 
 
-class LineageLinkedRecord:
+class LineageLinkedRecord(object):
     def __init__(self, rec, h):
         self.handlers = h
         self.tag = rec.tag
@@ -186,7 +187,7 @@ class LineageLinkedRecord:
         return []
 
 
-class EventRecord (LineageLinkedRecord):
+class EventRecord(LineageLinkedRecord):
     def __init__(self, rec, h):
         LineageLinkedRecord.__init__(self, rec, h)
 
@@ -194,7 +195,7 @@ class EventRecord (LineageLinkedRecord):
         return str(self.getValue('DATE')) + ' ' + str(self.getValue('PLAC'))
 
 
-class DateRecord (LineageLinkedRecord):
+class DateRecord(LineageLinkedRecord):
     def __init__(self, rec, h):
         LineageLinkedRecord.__init__(self, rec, h)
 
@@ -207,7 +208,7 @@ class DateRecord (LineageLinkedRecord):
             return datetime.datetime.strptime(' '.join(parts), fmt).date()
 
 
-class NameRecord (LineageLinkedRecord):
+class NameRecord(LineageLinkedRecord):
     def __init__(self, rec, h):
         LineageLinkedRecord.__init__(self, rec, h)
 
@@ -215,7 +216,7 @@ class NameRecord (LineageLinkedRecord):
         return ' '.join(''.join(self.value.split('/')).split())
 
 
-class ReferenceRecord (LineageLinkedRecord):
+class ReferenceRecord(LineageLinkedRecord):
     def __init__(self, rec, h):
         LineageLinkedRecord.__init__(self, rec, h)
 
@@ -223,12 +224,12 @@ class ReferenceRecord (LineageLinkedRecord):
         return str(self.type) + ':' + self.value
 
 
-class NoteRecord (LineageLinkedRecord):
+class NoteRecord(LineageLinkedRecord):
     def __init__(self, rec, h):
         LineageLinkedRecord.__init__(self, rec, h)
 
 
-class ObjectRecord (LineageLinkedRecord):
+class ObjectRecord(LineageLinkedRecord):
     def __init__(self, rec, h):
         LineageLinkedRecord.__init__(self, rec, h)
 
@@ -253,7 +254,7 @@ class SurnameRecord(LineageLinkedRecord):
         return ''.join(self.value.split('/'))
 
 
-class FamilyRecord (LineageLinkedRecord):
+class FamilyRecord(LineageLinkedRecord):
     def __init__(self, rec, h):
         LineageLinkedRecord.__init__(self, rec, h)
 
@@ -266,7 +267,7 @@ class FamilyRecord (LineageLinkedRecord):
         return '\n'.join(ret)
 
 
-class IndividualRecord (LineageLinkedRecord):
+class IndividualRecord(LineageLinkedRecord):
     def __init__(self, rec, h):
         LineageLinkedRecord.__init__(self, rec, h)
 
@@ -328,7 +329,7 @@ class IndividualRecord (LineageLinkedRecord):
         return '\n'.join(ret)
 
 
-class UserReferenceNumberRecord (LineageLinkedRecord):
+class UserReferenceNumberRecord(LineageLinkedRecord):
     def __init__(self, rec, h):
         LineageLinkedRecord.__init__(self, rec, h)
 
