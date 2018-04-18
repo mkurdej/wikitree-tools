@@ -9,9 +9,7 @@ def print_to_console(data=''):
     print data
 
 
-def lint(filename, options, out=print_to_console):
-
-    output = None
+def parse_options(options, out):
     opts = {}
 
     for opt in options:
@@ -21,6 +19,14 @@ def lint(filename, options, out=print_to_console):
             opts[key] = value
         else:
             opts[opt] = None
+
+    return opts
+
+
+def lint(filename, options, out=print_to_console):
+
+    output = None
+    opts = parse_options(options, out)
 
     if opts.has_key('output'):
         output = open(opts['output'], 'w')
