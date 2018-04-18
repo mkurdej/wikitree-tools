@@ -63,8 +63,8 @@ class GedcomRecord(object):
         ret = []
         ret.append(('\t' * self.level) +
                    '\t'.join((str(self.xref_id), self.tag, str(self.value))))
-        for r in self.sub_records:
-            ret.append(str(r))
+        for subrecord in self.sub_records:
+            ret.append(str(subrecord))
         return '\n'.join(ret)
 
 
@@ -74,8 +74,8 @@ class Gedcom(object):
         self.records = []
 
         infile = open(fname, 'r')
-        for l in infile.readlines():
-            rec = GedcomRecord(l)
+        for line in infile.readlines():
+            rec = GedcomRecord(line)
             if rec.xref_id is not None:
                 self.xref_ids[rec.xref_id] = rec
 
@@ -86,8 +86,8 @@ class Gedcom(object):
 
     def __str__(self):
         ret = []
-        for r in self.records:
-            ret.append(str(r))
+        for record in self.records:
+            ret.append(str(record))
         return '\n'.join(ret)
 
 
@@ -106,45 +106,46 @@ class LineageLinkedGedcom(object):
         self.index = {}
         self.trailer = None
 
-        for r in gedcom.records:
-            if r.tag == 'HEAD':
+        for record in gedcom.records:
+            if record.tag == 'HEAD':
                 if self.header is not None:
                     raise 'multiple header records found'
-                self.header = r
-            elif r.tag == 'SUBN':
+                self.header = record
+            elif record.tag == 'SUBN':
                 if self.submission_record is not None:
                     raise 'multiple submission records found'
-                self.submission_record = r
-            elif r.tag == 'TRLR':
+                self.submission_record = record
+            elif record.tag == 'TRLR':
                 if self.trailer is not None:
                     raise 'multiple trailer records found'
-                self.trailer = r
-            elif r.tag == 'FAM':
-                fr = self.handlers[r.tag](r, h)
-                self.families.append(fr)
-                if r.xref_id is not None:
-                    self.index[r.xref_id] = fr
-            elif r.tag == 'INDI':
-                ir = self.handlers[r.tag](r, h)
-                self.individuals.append(ir)
-                if r.xref_id is not None:
-                    self.index[r.xref_id] = ir
+                self.trailer = record
+            elif record.tag == 'FAM':
+                family_record = self.handlers[record.tag](record, h)
+                self.families.append(family_record)
+                if record.xref_id is not None:
+                    self.index[record.xref_id] = family_record
+            elif record.tag == 'INDI':
+                individual_record = self.handlers[record.tag](record, h)
+                self.individuals.append(individual_record)
+                if record.xref_id is not None:
+                    self.index[record.xref_id] = individual_record
             else:
                 pass
-                # print r.tag
+                # print(record.tag)
 
-        for i in self.individuals:
+        for individual in self.individuals:
             for tag in ('FAMS', 'FAMC'):
-                if i.records.has_key(tag):
-                    for f in i.records[tag]:
-                        if self.index.has_key(f.value):
-                            f.value = self.index[f.value]
-        for f in self.families:
+                if individual.records.has_key(tag):
+                    for family in individual.records[tag]:
+                        if self.index.has_key(family.value):
+                            family.value = self.index[family.value]
+
+        for family in self.families:
             for tag in ('HUSB', 'WIFE', 'CHIL'):
-                if f.records.has_key(tag):
-                    for i in f.records[tag]:
-                        if self.index.has_key(i.value):
-                            i.value = self.index[i.value]
+                if family.records.has_key(tag):
+                    for individual in family.records[tag]:
+                        if self.index.has_key(individual.value):
+                            individual.value = self.index[individual.value]
 
 
 class LineageLinkedRecord(object):
@@ -156,11 +157,11 @@ class LineageLinkedRecord(object):
         self.xref_id = rec.xref_id
         self.reference_numbers = {}
 
-        for r in rec.sub_records:
-            if not self.handleRecord(r):
+        for subrecord in rec.sub_records:
+            if not self.handleRecord(subrecord):
                 # print(rec)
-                #raise Exception('record not handled: '+r.tag+' in '+rec.tag)
-                print('record not handled: ' + r.tag + ' in ' + rec.tag)
+                #raise Exception('record not handled: '+ subrecord.tag+' in '+rec.tag)
+                print('record not handled: ' + subrecord.tag + ' in ' + rec.tag)
 
     def handleRecord(self, rec):
         try:
@@ -389,15 +390,19 @@ def soundex(name, len=4):
 # end of http://code.activestate.com/recipes/52213/ }}}
 
 
+def main(filename):
+    ged = Gedcom(filename)
+    lineage_ged = LineageLinkedGedcom(ged)
+    for individual in lineage_ged.individuals:
+        print(individual.get('NAME'))
+        print(individual.getAge())
+        if individual.records.has_key('OBJE'):
+            print(individual)
+            for obj in individual.records['OBJE']:
+                print(obj)
+        # print(individual.reference_numbers)
+
+
 if __name__ == '__main__':
     import sys
-    g = Gedcom(sys.argv[1])
-    llg = LineageLinkedGedcom(g)
-    for i in llg.individuals:
-        print(i.get('NAME'))
-        print(i.getAge())
-        if i.records.has_key('OBJE'):
-            print(i)
-            for o in i.records['OBJE']:
-                print(o)
-        # print(i.reference_numbers)
+    main(sys.argv[1])
