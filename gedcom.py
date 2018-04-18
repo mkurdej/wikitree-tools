@@ -339,9 +339,9 @@ class UserReferenceNumberRecord(LineageLinkedRecord):
         LineageLinkedRecord.__init__(self, rec, handler)
 
     def getType(self):
-        t = self.get('TYPE')
-        if t is not None:
-            return t.value
+        record_type = self.get('TYPE')
+        if record_type is not None:
+            return record_type.value
 
 
 handlers['INDI'] = IndividualRecord
@@ -367,20 +367,20 @@ def soundex(name, length=4):
     # digits holds the soundex values for the alphabet
     digits = '01230120022455012623010202'
     sndx = ''
-    fc = ''
+    first_char = ''
 
     # translate alpha chars in name to soundex digits
-    for c in name.upper():
-        if c.isalpha():
-            if not fc:
-                fc = c   # remember first letter
-            d = digits[ord(c) - ord('A')]
+    for char in name.upper():
+        if char.isalpha():
+            if not first_char:
+                first_char = char   # remember first letter
+            digit = digits[ord(char) - ord('A')]
             # duplicate consecutive soundex digits are skipped
-            if not sndx or (d != sndx[-1]):
-                sndx += d
+            if not sndx or (digit != sndx[-1]):
+                sndx += digit
 
     # replace first digit with first alpha character
-    sndx = fc + sndx[1:]
+    sndx = first_char + sndx[1:]
 
     # remove all 0s from the soundex code
     sndx = sndx.replace('0', '')
