@@ -23,21 +23,7 @@ def parse_options(options, out):
     return opts
 
 
-def lint(filename, options, out=print_to_console):
-
-    output = None
-    opts = parse_options(options, out)
-
-    if opts.has_key('output'):
-        output = open(opts['output'], 'w')
-
-    maxage = None
-    if opts.has_key('maxage'):
-        maxage = float(opts['maxage'])
-
-    ged = gedcom.Gedcom(filename)
-    llg = gedcom.LineageLinkedGedcom(ged)
-
+def write_report(filename, opts, output):
     if output is not None:
         output.write('<html><body>\n')
         output.write(
@@ -53,29 +39,46 @@ def lint(filename, options, out=print_to_console):
             output.write('</li>\n')
         output.write('</el>\n')
 
-    for i in llg.individuals:
 
-        if i.records.has_key('WWW'):
+def lint(filename, options, out=print_to_console):
+    output = None
+    opts = parse_options(options, out)
+
+    if opts.has_key('output'):
+        output = open(opts['output'], 'w')
+
+    maxage = None
+    if opts.has_key('maxage'):
+        maxage = float(opts['maxage'])
+
+    ged = gedcom.Gedcom(filename)
+    llg = gedcom.LineageLinkedGedcom(ged)
+
+    if output is not None:
+        write_report(filename, opts, output)
+
+    for individual in llg.individuals:
+        if individual.records.has_key('WWW'):
             problems = []
-            if maxage is not None and i.getAge() is not None and i.getAge() > maxage:
+            if maxage is not None and individual.getAge() is not None and individual.getAge() > maxage:
                 problems.append(
-                    'age {0} greater than maximum age {1}'.format(i.getAge(), maxage))
+                    'age {0} greater than maximum age {1}'.format(individual.getAge(), maxage))
 
-            if opts.has_key('birth') and i.get('BIRT').get('DATE') is None:
+            if opts.has_key('birth') and individual.get('BIRT').get('DATE') is None:
                 problems.append('missing birth date')
-            if opts.has_key('death') and i.get('DEAT') is None:
+            if opts.has_key('death') and individual.get('DEAT') is None:
                 problems.append('missing date of death')
-            if i.get('SEX') is None:
+            if individual.get('SEX') is None:
                 problems.append('sex not defined')
-            for obj in i.getAll('OBJE'):
+            for obj in individual.getAll('OBJE'):
                 if obj.get('FORM').value == 'Message':
                     if obj.get('TEXT').value.lower().find('todo') != -1:
                         problems.append('todo found in message')
-            if i.get('NOTE').get('TEXT').value.lower().find('todo') != -1:
+            if individual.get('NOTE').get('TEXT').value.lower().find('todo') != -1:
                 problems.append('todo found in bio')
             if problems:
                 if output is not None:
-                    output.write(i.html() + '\n')
+                    output.write(individual.html() + '\n')
                     output.write('<h3>Problems:</h3>\n')
                     output.write('<e1>\n')
                     for problem in problems:
@@ -83,8 +86,8 @@ def lint(filename, options, out=print_to_console):
                     output.write('</e1>\n')
                 out('')
                 out('\n'.join(problems))
-                out(i)
-                for obj in i.getAll('OBJE'):
+                out(individual)
+                for obj in individual.getAll('OBJE'):
                     if obj.get('FORM').value == 'Message':
                         out(obj.get('TEXT').value)
 
