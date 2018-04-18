@@ -46,14 +46,15 @@ class GedcomRecord(object):
         if rec.level <= self.level:
             raise 'invalid record level'
         if rec.level == self.level + 1:
+            if not self.value:
+                self.value = ''
+
             if rec.tag == 'CONC':
                 if rec.value is not None:
                     self.value += rec.value
             elif rec.tag == 'CONT':
                 if rec.value is not None:
                     self.value += rec.value
-                if not self.value:
-                    self.value = ''
                 self.value += '\n'
             else:
                 self.sub_records.append(rec)
