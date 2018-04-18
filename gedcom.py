@@ -37,7 +37,6 @@ class GedcomRecord(object):
                 self.value = parts[1][5:] + '\n'
             else:
                 self.value = parts[1]
-
         else:
             self.value = None
 
@@ -53,6 +52,8 @@ class GedcomRecord(object):
             elif rec.tag == 'CONT':
                 if rec.value is not None:
                     self.value += rec.value
+                if not self.value:
+                    self.value = ''
                 self.value += '\n'
             else:
                 self.sub_records.append(rec)
