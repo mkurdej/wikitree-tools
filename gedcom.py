@@ -95,9 +95,9 @@ handlers = {}
 
 
 class LineageLinkedGedcom(object):
-    def __init__(self, gedcom, h=handlers):
+    def __init__(self, gedcom, handler=handlers):
         self.gedcom = gedcom
-        self.handlers = h
+        self.handlers = handler
 
         self.header = None
         self.submission_record = None
@@ -120,12 +120,12 @@ class LineageLinkedGedcom(object):
                     raise 'multiple trailer records found'
                 self.trailer = record
             elif record.tag == 'FAM':
-                family_record = self.handlers[record.tag](record, h)
+                family_record = self.handlers[record.tag](record, handler)
                 self.families.append(family_record)
                 if record.xref_id is not None:
                     self.index[record.xref_id] = family_record
             elif record.tag == 'INDI':
-                individual_record = self.handlers[record.tag](record, h)
+                individual_record = self.handlers[record.tag](record, handler)
                 self.individuals.append(individual_record)
                 if record.xref_id is not None:
                     self.index[record.xref_id] = individual_record
@@ -149,8 +149,8 @@ class LineageLinkedGedcom(object):
 
 
 class LineageLinkedRecord(object):
-    def __init__(self, rec, h):
-        self.handlers = h
+    def __init__(self, rec, handler):
+        self.handlers = handler
         self.tag = rec.tag
         self.value = rec.value
         self.records = {}
@@ -193,16 +193,16 @@ class LineageLinkedRecord(object):
 
 
 class EventRecord(LineageLinkedRecord):
-    def __init__(self, rec, h):
-        LineageLinkedRecord.__init__(self, rec, h)
+    def __init__(self, rec, handler):
+        LineageLinkedRecord.__init__(self, rec, handler)
 
     def __str__(self):
         return str(self.getValue('DATE')) + ' ' + str(self.getValue('PLAC'))
 
 
 class DateRecord(LineageLinkedRecord):
-    def __init__(self, rec, h):
-        LineageLinkedRecord.__init__(self, rec, h)
+    def __init__(self, rec, handler):
+        LineageLinkedRecord.__init__(self, rec, handler)
 
     def asDate(self):
         parts = self.value.split()
@@ -214,29 +214,29 @@ class DateRecord(LineageLinkedRecord):
 
 
 class NameRecord(LineageLinkedRecord):
-    def __init__(self, rec, h):
-        LineageLinkedRecord.__init__(self, rec, h)
+    def __init__(self, rec, handler):
+        LineageLinkedRecord.__init__(self, rec, handler)
 
     def __str__(self):
         return ' '.join(''.join(self.value.split('/')).split())
 
 
 class ReferenceRecord(LineageLinkedRecord):
-    def __init__(self, rec, h):
-        LineageLinkedRecord.__init__(self, rec, h)
+    def __init__(self, rec, handler):
+        LineageLinkedRecord.__init__(self, rec, handler)
 
     def __str__(self):
         return str(self.type) + ':' + self.value
 
 
 class NoteRecord(LineageLinkedRecord):
-    def __init__(self, rec, h):
-        LineageLinkedRecord.__init__(self, rec, h)
+    def __init__(self, rec, handler):
+        LineageLinkedRecord.__init__(self, rec, handler)
 
 
 class ObjectRecord(LineageLinkedRecord):
-    def __init__(self, rec, h):
-        LineageLinkedRecord.__init__(self, rec, h)
+    def __init__(self, rec, handler):
+        LineageLinkedRecord.__init__(self, rec, handler)
 
     def form(self):
         ret = self.get('FORM')
@@ -252,36 +252,36 @@ class ObjectRecord(LineageLinkedRecord):
 
 
 class SurnameRecord(LineageLinkedRecord):
-    def __init__(self, rec, h):
-        LineageLinkedRecord.__init__(self, rec, h)
+    def __init__(self, rec, handler):
+        LineageLinkedRecord.__init__(self, rec, handler)
 
     def __str__(self):
         return ''.join(self.value.split('/'))
 
 
 class FamilyRecord(LineageLinkedRecord):
-    def __init__(self, rec, h):
-        LineageLinkedRecord.__init__(self, rec, h)
+    def __init__(self, rec, handler):
+        LineageLinkedRecord.__init__(self, rec, handler)
 
     def __str__(self):
         ret = []
         ret.append(str(self.getValue('HUSB')) + ' and ' +
                    str(self.getValue('WIFE')) + ' (marriage: ' + str(self.get('MARR')) + ')')
-        for c in self.getAll('CHIL'):
-            ret.append('  ' + str(c))
+        for child in self.getAll('CHIL'):
+            ret.append('  ' + str(child))
         return '\n'.join(ret)
 
 
 class IndividualRecord(LineageLinkedRecord):
-    def __init__(self, rec, h):
-        LineageLinkedRecord.__init__(self, rec, h)
+    def __init__(self, rec, handler):
+        LineageLinkedRecord.__init__(self, rec, handler)
 
     def surname_soundex(self):
         if self.get('SURN') is not None:
             return soundex(self.get('SURN').value)
 
-    def isName(self, n):
-        return str(self.get('NAME')) == n
+    def isName(self, name):
+        return str(self.get('NAME')) == name
 
     def getAge(self):
         birth = None
@@ -335,8 +335,8 @@ class IndividualRecord(LineageLinkedRecord):
 
 
 class UserReferenceNumberRecord(LineageLinkedRecord):
-    def __init__(self, rec, h):
-        LineageLinkedRecord.__init__(self, rec, h)
+    def __init__(self, rec, handler):
+        LineageLinkedRecord.__init__(self, rec, handler)
 
     def getType(self):
         t = self.get('TYPE')
@@ -358,7 +358,7 @@ handlers['DATE'] = DateRecord
 
 
 # {{{ http://code.activestate.com/recipes/52213/ (r1)
-def soundex(name, len=4):
+def soundex(name, length=4):
     """ soundex module conforming to Knuth's algorithm
         implementation 2000-12-24 by Gregory Jorgensen
         public domain
@@ -385,8 +385,8 @@ def soundex(name, len=4):
     # remove all 0s from the soundex code
     sndx = sndx.replace('0', '')
 
-    # return soundex code padded to len characters
-    return (sndx + (len * '0'))[:len]
+    # return soundex code padded to length characters
+    return (sndx + (length * '0'))[:length]
 # end of http://code.activestate.com/recipes/52213/ }}}
 
 
