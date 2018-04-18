@@ -9,7 +9,7 @@ def print_to_console(data=''):
     print data
 
 
-def lint(fname, options, out=print_to_console):
+def lint(filename, options, out=print_to_console):
 
     output = None
     opts = {}
@@ -29,7 +29,7 @@ def lint(fname, options, out=print_to_console):
     if opts.has_key('maxage'):
         maxage = float(opts['maxage'])
 
-    ged = gedcom.Gedcom(fname)
+    ged = gedcom.Gedcom(filename)
     llg = gedcom.LineageLinkedGedcom(ged)
 
     if output is not None:
@@ -38,7 +38,7 @@ def lint(fname, options, out=print_to_console):
             '<h1><a href="http://www.wikitree.com">WikiTree</a> Lint</h1>\n')
         output.write('<p>Report run at: ' +
                      str(datetime.datetime.now()) + '</p>\n')
-        output.write('<p>input: ' + fname + '</p>\n')
+        output.write('<p>input: ' + filename + '</p>\n')
         output.write('<el>Lint options\n')
         for key, value in opts.iteritems():
             output.write('<li>' + key)
