@@ -74,6 +74,7 @@ def check_individual(individual, opts, maxage):
         for tag in ['CONT', 'CONC', 'TEXT']:
             text = note.get(tag)
             if text:
+                # TODO: Use str.casefold.
                 if text.value.lower().find('todo') != -1:
                     problems.append('todo found in bio')
 
