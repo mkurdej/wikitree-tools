@@ -75,6 +75,10 @@ class Gedcom(object):
 
         infile = open(fname, 'r')
         for line in infile.readlines():
+            line = line.strip()
+            if line == '':
+                continue
+
             rec = GedcomRecord(line)
             if rec.xref_id is not None:
                 self.xref_ids[rec.xref_id] = rec
