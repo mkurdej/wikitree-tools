@@ -33,6 +33,7 @@ def write_report_header(filename, opts, output):
     output.write('<p>Report run at: ' +
                  str(datetime.datetime.now()) + '</p>\n')
     output.write('<p>input: ' + filename + '</p>\n')
+
     output.write('<el>Lint options\n')
     for key, value in opts.iteritems():
         output.write('<li>' + key)
@@ -40,6 +41,12 @@ def write_report_header(filename, opts, output):
             output.write(': ' + value)
         output.write('</li>\n')
     output.write('</el>\n')
+
+def write_report_footer(output):
+    if output is None:
+        return
+
+    output.write('</body></html>\n')
 
 
 def check_individual(individual, opts, maxage):
@@ -100,15 +107,13 @@ def lint(filename, options, out=print_to_console):
     ged = gedcom.Gedcom(filename)
     llg = gedcom.LineageLinkedGedcom(ged)
 
-    if output is not None:
-        write_report_header(filename, opts, output)
+    write_report_header(filename, opts, output)
 
     for individual in llg.individuals:
         problems = check_individual(individual, opts, maxage)
         write_problems(individual, problems, output, out)
 
-    if output is not None:
-        output.write('</body></html>\n')
+    write_report_footer(output)
 
 
 if __name__ == '__main__':
