@@ -1,25 +1,26 @@
 #!/usr/bin/env python
+# pylint: disable=C0111
 
-import gedcom
 import datetime
+import gedcom
 
 
-def stdPrint(data=''):
+def print_to_console(data=''):
     print data
 
 
-def lint(fname, options, out=stdPrint):
+def lint(fname, options, out=print_to_console):
 
     output = None
     opts = {}
 
-    for o in options:
-        out(o)
-        if '=' in o:
-            k, v = o.split('=', 1)
-            opts[k] = v
+    for opt in options:
+        out(opt)
+        if '=' in opt:
+            key, value = opt.split('=', 1)
+            opts[key] = value
         else:
-            opts[o] = None
+            opts[opt] = None
 
     if opts.has_key('output'):
         output = open(opts['output'], 'w')
@@ -28,8 +29,8 @@ def lint(fname, options, out=stdPrint):
     if opts.has_key('maxage'):
         maxage = float(opts['maxage'])
 
-    g = gedcom.Gedcom(fname)
-    llg = gedcom.LineageLinkedGedcom(g)
+    ged = gedcom.Gedcom(fname)
+    llg = gedcom.LineageLinkedGedcom(ged)
 
     if output is not None:
         output.write('<html><body>\n')
@@ -39,10 +40,10 @@ def lint(fname, options, out=stdPrint):
                      str(datetime.datetime.now()) + '</p>\n')
         output.write('<p>input: ' + fname + '</p>\n')
         output.write('<el>Lint options\n')
-        for k, v in opts.iteritems():
-            output.write('<li>' + k)
-            if v is not None:
-                output.write(': ' + v)
+        for key, value in opts.iteritems():
+            output.write('<li>' + key)
+            if value is not None:
+                output.write(': ' + value)
             output.write('</li>\n')
         output.write('</el>\n')
 
@@ -66,13 +67,13 @@ def lint(fname, options, out=stdPrint):
                         problems.append('todo found in message')
             if i.get('NOTE').get('TEXT').value.lower().find('todo') != -1:
                 problems.append('todo found in bio')
-            if len(problems):
+            if problems:
                 if output is not None:
                     output.write(i.html() + '\n')
                     output.write('<h3>Problems:</h3>\n')
                     output.write('<e1>\n')
-                    for p in problems:
-                        output.write('<li>' + p + '</li>\n')
+                    for problem in problems:
+                        output.write('<li>' + problem + '</li>\n')
                     output.write('</e1>\n')
                 out('')
                 out('\n'.join(problems))
