@@ -15,7 +15,7 @@ class GedcomRecord(object):
     def __init__(self, line):
         parts = line.strip().split(' ', 1)
 
-        print(parts)
+        # print(parts)
 
         self.level = int(parts[0])
 
